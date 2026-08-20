@@ -34,24 +34,39 @@ git clone https://github.com/leeuouo100/xhs-benchmark-breakdown.git ~/.workbuddy
 - "把这篇爆款结构改成我的原创稿"
 - 或直接点名："用 xhs-benchmark-breakdown 拆解"
 
+如果手里还没有数据，skill 会先按数据获取 SOP 帮你把账号 / 笔记 / 评论 / 视频抓下来，再进入拆解。
+
+## 数据获取（没数据时）
+
+拆解依赖真实数据。本 skill 提供基于 **opencli + 本机 Chrome** 的数据获取 SOP（详见 `reference/xhs-data-collection.md`），覆盖：
+
+1. 抓取账号主页（粉丝数 + 公开笔记列表）
+2. 抓取单篇笔记详情（赞 / 藏 / 评 / 标题 / 正文）
+3. 抓取评论区（用户需求信号）
+4. 下载视频 + 抽帧 + Whisper 转写口播
+5. 整理成 `candidates.json` 喂给评分脚本
+
+> 抓取依赖你本机已登录的浏览器，skill 不存储凭证、不模拟登录。
+
 ## 目录结构
 
 ```
 xhs-benchmark-breakdown/
-├── SKILL.md                      # 主入口：四步工作流与路由表
+├── SKILL.md                        # 主入口：四步工作流与路由表
 ├── reference/
-│   └── xhs-breakdown-knowledge.md # 钩子库/结构模型/标题公式/人设三板斧/藏赞比三档
+│   ├── xhs-breakdown-knowledge.md   # 钩子库/结构模型/标题公式/人设三板斧/藏赞比三档
+│   └── xhs-data-collection.md       # 数据获取 SOP（opencli 抓取账号/笔记/评论/视频）
 ├── templates/
-│   ├── account_deep_breakdown.md  # 账号深度拆解模板
-│   ├── viral_note_breakdown.md    # 单篇爆款拆解模板
-│   └── action_roadmap.md          # 行动路线图模板
+│   ├── account_deep_breakdown.md    # 账号深度拆解模板
+│   ├── viral_note_breakdown.md      # 单篇爆款拆解模板
+│   └── action_roadmap.md            # 行动路线图模板
 └── scripts/
-    └── topic_scorer.py            # 爆款指数评分脚本
+    └── topic_scorer.py              # 爆款指数评分脚本
 ```
 
 ## 边界
 
-- 不爬取小红书、不登录账号；只分析用户提供的链接或已抓取数据。
+- 不凭空爬取小红书、不存储账号凭证；如用户尚无数据，按 SOP 用 opencli 辅助抓取（依赖本机已登录浏览器）。
 - 不编造后台指标（阅读量 / 转化率 / 商业合作数据等），无法确认的信息明确标注。
 
 ## 致谢
