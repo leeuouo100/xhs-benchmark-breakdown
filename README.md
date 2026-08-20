@@ -55,19 +55,22 @@ xhs-benchmark-breakdown/
 ├── SKILL.md                        # 主入口：四步工作流与路由表
 ├── reference/
 │   ├── xhs-breakdown-knowledge.md   # 钩子库/结构模型/标题公式/人设三板斧/藏赞比三档
-│   └── xhs-data-collection.md       # 数据获取 SOP（opencli 抓取账号/笔记/评论/视频）
+│   └── xhs-data-collection.md       # 数据获取 SOP（opencli 抓取账号/笔记/评论/视频，含已知坑）
 ├── templates/
 │   ├── account_deep_breakdown.md    # 账号深度拆解模板
 │   ├── viral_note_breakdown.md      # 单篇爆款拆解模板
 │   └── action_roadmap.md            # 行动路线图模板
 └── scripts/
-    └── topic_scorer.py              # 爆款指数评分脚本
+    ├── topic_scorer.py              # 爆款指数评分脚本（支持粉丝数缺失）
+    └── build_candidates.py          # 一键聚合：user列表 + 批量note → candidates.json
 ```
 
 ## 边界
 
 - 不凭空爬取小红书、不存储账号凭证；如用户尚无数据，按 SOP 用 opencli 辅助抓取（依赖本机已登录浏览器）。
 - 不编造后台指标（阅读量 / 转化率 / 商业合作数据等），无法确认的信息明确标注。
+- **粉丝数无法从 opencli 获取**（user/note 都不返回，WebFetch 主页常触发安全验证）；缺失时评分脚本标「粉丝未知」并用 100 作占位分母做账号内横向比较，不会误标「低粉爆款」。
+- **Windows 注意**：Python 脚本里调用 opencli 需传绝对路径（如 `C:/Users/<user>/AppData/Roaming/npm/opencli.cmd`），且脚本内文件路径用 `D:/...` 而非 `/d/...`；opencli stdout 含非 UTF-8 字节需用 `errors="ignore"` 解码；`.cmd` 子进程可能输出 YAML 而非 JSON（解析需双兼容）。详见 `reference/xhs-data-collection.md` 第 8 节「已知坑」。
 
 ## 致谢
 

@@ -18,32 +18,40 @@ def score_note(n: dict) -> dict:
     likes = float(n.get("likes", 0) or 0)
     collects = float(n.get("collects", 0) or 0)
     comments = float(n.get("comments", 0) or 0)
-    followers = float(n.get("followers", 0) or 0)
+    followers = n.get("followers")
+    followers_unknown = followers is None or followers == 0
+    followers_val = float(followers or 0)
 
     engagement = likes + collects * 1.5 + comments * 3.0
-    viral_index = engagement / max(followers, 100.0)
+    if followers_unknown:
+        # 粉丝数缺失：分母用 100 作占位，仅供账号内横向比较，不代表真实爆款指数
+        viral_index = engagement / 100.0
+    else:
+        viral_index = engagement / max(followers_val, 100.0)
     collect_ratio = collects / max(likes, 1.0)
 
     return {
         "title": n.get("title", "(无标题)"),
-        "followers": int(followers),
+        "followers": (int(followers_val) if not followers_unknown else None),
         "likes": int(likes),
         "collects": int(collects),
         "comments": int(comments),
         "viral_index": round(viral_index, 2),
         "collect_ratio": round(collect_ratio, 2),
-        "tags": tag_note(followers, viral_index, collect_ratio, comments),
+        "tags": tag_note(followers_val, followers_unknown, viral_index, collect_ratio, comments),
     }
 
 
-def tag_note(followers: float, viral_index: float, collect_ratio: float, comments: float) -> str:
+def tag_note(followers_val: float, followers_unknown: bool, viral_index: float, collect_ratio: float, comments: float) -> str:
     tags = []
-    if followers < 5000 and viral_index > 0.5:
+    if not followers_unknown and followers_val < 5000 and viral_index > 0.5:
         tags.append("低粉爆款")
     if collect_ratio >= 1.0:
         tags.append("高收藏")
     if comments >= 50:
         tags.append("高互动")
+    if followers_unknown:
+        tags.append("粉丝未知")
     return "、".join(tags) if tags else "常规"
 
 
@@ -74,11 +82,13 @@ def main() -> None:
     print("-" * 100)
     for i, s in enumerate(scored, 1):
         title = s["title"][:24]
-        print(f"{i:<4}{title:<26}{s['followers']:>8}{s['likes']:>7}{s['collects']:>7}{s['comments']:>7}{s['viral_index']:>10}{s['collect_ratio']:>8}  {s['tags']}")
+        fcol = "?" if s["followers"] is None else s["followers"]
+        print(f"{i:<4}{title:<26}{fcol:>8}{s['likes']:>7}{s['collects']:>7}{s['comments']:>7}{s['viral_index']:>10}{s['collect_ratio']:>8}  {s['tags']}")
 
     print()
     print(f"共 {len(scored)} 条候选，已按爆款指数降序排列。")
     print("爆款指数 = (赞 + 藏×1.5 + 评×3) / max(粉丝,100)，越高代表单位粉丝的互动产出越强。")
+    print("注意：粉丝数列为『?』时表示原始数据缺失，此时爆款指数分母为 100 作占位，仅供账号内横向比较，『低粉爆款』标签不生效。")
 
 
 if __name__ == "__main__":

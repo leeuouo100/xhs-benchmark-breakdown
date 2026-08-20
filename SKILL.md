@@ -44,8 +44,15 @@ description: 小红书对标账号 / 爆款笔记拆解专家。综合三套成�
 
 ## Step 0 · 数据获取（如尚无数据）
 
-用户给的如果只是链接、或根本没有数据，先按 `reference/xhs-data-collection.md` 的数据获取 SOP 用 opencli 抓取：账号主页（粉丝数 + 笔记列表）→ 单篇笔记详情（赞/藏/评/标题/正文）→ 评论区（需求信号）→ 视频下载 + 抽帧 + 口播转写。然后把候选笔记整理成 `candidates.json` 再进入 Step 1。
+用户给的如果只是链接、或根本没有数据，先按 `reference/xhs-data-collection.md` 的数据获取 SOP 用 opencli 抓取：
 
+1. （可选）`search "<关键词>"` 发现对标账号，拿 user_id；
+2. `user <user_id>` 拿**笔记列表 + 点赞 + 完整 URL**（⚠️ 不返回粉丝数/收藏/评论）；
+3. 对每篇 `note "<完整URL>"` 拿**赞/藏/评/标题/正文**（note 必须传完整签名 URL，不能只传 note_id）；
+4. `comments "<完整URL>"` 拿评论区需求信号；
+5. 用 `scripts/build_candidates.py --user user_raw.json --out candidates.json --opencli "<opencli.cmd绝对路径>"` **一键聚合**成 candidates.json（推荐，已处理 Windows 路径/编码/YAML 兼容等坑），再进入 Step 1。
+
+> ⚠️ 粉丝数：opencli 的 user/note 都不返回，WebFetch 主页常触发安全验证。缺失就标"粉丝未知"，评分脚本用 100 作占位分母做账号内横向比较，不会误标"低粉爆款"。详见 SOP 第 8 节「已知坑」。
 > skill 本身不登录、不存储凭证；抓取依赖用户本机已登录的浏览器，结论仅基于公开可验证信息。
 
 ## Step 1 · 量化找爆款（评分派）
