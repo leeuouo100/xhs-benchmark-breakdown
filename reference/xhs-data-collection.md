@@ -57,7 +57,7 @@ opencli xiaohongshu note "<note_url>" -f json --window background
 - `note_url` 直接取自第 2 步 `user` 列表里的 `url` 字段。
 - **实际返回**：`title` / `author` / `content` / **`likes` / `collects` / `comments`** / `tags`。
 - 用这个拿到每篇笔记的**收藏与评论**（user 列表里没有）。
-- ⚠️ 在 Python 子进程里调 `.cmd` 时，输出可能是 **YAML 格式**（`- field: ... \n  value: ...`）而非 JSON（参数里的 `&` 被 cmd 拆裂导致 `-f json` 失效）——解析时需 JSON / YAML 双兼容（见 `scripts/build_candidates.py`）。
+- ⚠️ **在 Python 子进程里调 `.cmd` 时，URL 里的 `&xsec_source` 会被 Windows cmd 当成命令分隔符**，导致整个 `-f json` 参数失效、opencli 退化返回 **YAML**（`- field: ... \n  value: ...`）而非 JSON。**真正的修复**：调用时必须 `shell=True` 且把 URL 用**双引号包裹**（见 `scripts/build_candidates.py` 的 `run_note`），强制 cmd 不拆参、`-f json` 生效，opencli 返回 JSON（最稳）。即便退化为 YAML，解析时也需 JSON/YAML 双兼容，且 YAML 分支要去单/双引号（见下方坑 8）。
 
 ---
 
@@ -141,6 +141,7 @@ python scripts/topic_scorer.py --input candidates.json
 5. **opencli stdout 含非 UTF-8 字节** → `text=True` 解码崩溃，改用 `encoding="utf-8", errors="ignore"`。
 6. **`.cmd` 在子进程下输出 YAML 而非 JSON**（URL 里的 `&` 被 cmd 拆裂，`-f json` 失效）→ 解析需 JSON/YAML 双兼容。
 7. **评分脚本粉丝缺失会误标"低粉爆款"** → 已修正：粉丝未知时标"粉丝未知"且不误标低粉爆款。
+8. **YAML 退化分支的正则没去引号** → `value: '1309'` 带单引号，`int("'1309'")` 失败被 catch 成 0，收藏/评论全盘为 0。修复：解析时对 value 同时 `strip('"').strip("'")`（`clean_int`）。此坑与坑 6 同源：只有彻底修好 `&` 拆参让 opencli 走 JSON 分支，才能根除；YAML 兜底只是双保险。
 
 ---
 
